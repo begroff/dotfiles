@@ -94,6 +94,18 @@
 		git st; \
 		echo \"Reverted the last commit. Changes are now pending!\"; \
 		}; f"
+		
+	# Reword
+	# Open the editor and change the last commit
+	# Any pending changes in staging will be stashed and then re-applied after change
+	reword = "!f() { \
+		git stash; \
+		git commit --amend; \
+		git stash pop; \
+		clear; \
+		git loglast; \
+		echo \"Updated the last commit message!\"; \
+		}; f"
 
 	# =============================
 	# Branch Aliases
