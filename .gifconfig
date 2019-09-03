@@ -12,8 +12,13 @@
 [mergetool]
 	prompt = false
 	cmd = meld "$LOCAL" "$MERGED" "$REMOTE" --output "$MERGED"
-    #cmd = meld "$LOCAL" "$BASE" "$REMOTE" --output "$MERGED"
-	keepBackup = true
+    	#cmd = meld "$LOCAL" "$BASE" "$REMOTE" --output "$MERGED"
+	keepBackup = false
+[commit]
+	# Change to proper directory depending on machine
+	template = /home/grofftech/Dropbox/git/commit_message_template
+[pull]
+	rebase = preserve
 [alias]
 	# Shows a graphical log
 	logone = log --oneline --decorate --all --graph
@@ -23,35 +28,42 @@
 
 	# Display status with branch (shows changes as list)
 	st = status --short --branch
+	
+	# =============================
+	# Diff/Merge Aliases
+	# =============================
+
+	# Diff by directories
+	diffdir = difftool --dir-dif
 
 	# =============================
 	# Staging Aliases
 	# =============================
 
-	# Stage
+	# Stage File(s)
 	# If no argument is supplied, stages all changes
 	# If one file argument supplied, stage that change only
 	stagef = "!f() { \
 		clear; \
-		if [[ -z $1 ]]; \
+		if [ -z $1 ]; \
 		then git add .; \
 		else git add $1; \
 		fi; \
 		git st; \
-		if [[ -z $1 ]]; \
+		if [ -z $1 ]; \
 		then echo \"Added all pending changes to staging!\"; \
 		else echo \"Added '$1' to staging!\"; \
 		fi; \
 		}; f"
 
-	# Unstage
+	# Unstage File(s)
 	# If no argument is supplied, unstages all files.
 	# If one file argument supplied, ustages it.
 	unstage = "!f() { \
 		clear; \
 		git reset HEAD ${1-'--'}; \
 		git st; \
-		if [[ -z $1 ]]; \
+		if [ -z $1 ]; \
 		then echo \"Removed all changes from staging. Changes are now pending!\"; \
 		else echo \"Removed '$1' from staging. '$1' is now pending!\"; \
 		fi; \
@@ -65,7 +77,7 @@
 	# If no message argument supplied, opens configured editor for message.
 	# If message argument supplied, performs commit.
 	commita = "!f() { \
-		if [[ -z $1 ]]; \
+		if [ -z $1 ]; \
 		then git commit; \
 		else git commit -m \"$1\"; \
 		fi; \
