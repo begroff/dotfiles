@@ -28,7 +28,7 @@
 
 	# Display status with branch (shows changes as list)
 	st = status --short --branch
-	
+
 	# =============================
 	# Diff/Merge Aliases
 	# =============================
@@ -82,9 +82,9 @@
 		else git commit -m \"$1\"; \
 		fi; \
 		clear; \
-		git st; \
 		git loglast; \
 		echo \"All changes committed!\"; \
+		git st; \
 		}; f"
 
 	# Uncommit
@@ -94,7 +94,7 @@
 		git st; \
 		echo \"Reverted the last commit. Changes are now pending!\"; \
 		}; f"
-		
+
 	# Reword
 	# Open the editor and change the last commit
 	# Any pending changes in staging will be stashed and then re-applied after change
@@ -105,6 +105,26 @@
 		clear; \
 		git loglast; \
 		echo \"Updated the last commit message!\"; \
+		}; f"
+
+	# Add To
+	# Adds all staged changes to last commit, will not change the commit message
+	addto = "!f() { \
+		git commit -a --amend --no-edit; \
+		clear; \
+		git loglast; \
+		echo \"Added all staged changes to the last commit!\"; \
+		}; f"
+
+	# Rollback
+	# Undo any pending, staged or untracked changes. WARNING this is destructive, you will lose all your changes!
+	rollback = "!f() { \
+		git unstage; \
+		git checkout -- .; \
+		git clean -fd; \
+		clear; \
+		git st; \
+		echo \"Rolled back to the last commit!\"; \
 		}; f"
 
 	# =============================
@@ -121,16 +141,13 @@
 	# Diff for main project and submodules using configured difftool
 	sdifftool = !git difftool && git submodule foreach 'git difftool'
 
-	# Diff for main project and submodules using configured
-	# difftool with directory comparison
+	# Diff for main project and submodules using configured difftool with directory comparison
 	sdifftooldir = !git difftool --dir-dif && git submodule foreach 'git difftool --dir-dif'
 
-	# Push changes, check if submodules have
-	# been pushed. If they haven't, this will abort
+	# Push changes, check if submodules have been pushed. If they haven't, this will abort
 	spushchk = push --recurse-submodules=check
 
-	# Push changes, checking if submodules have
-	# been pushed. If they haven't, this will push them
+	# Push changes, checking if submodules have been pushed. If they haven't, this will push them
 	spush = push --recurse-submodules=on-demand
 
 	# Update the submodules using merge
