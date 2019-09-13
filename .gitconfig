@@ -12,8 +12,13 @@
 [mergetool]
 	prompt = false
 	cmd = meld "$LOCAL" "$MERGED" "$REMOTE" --output "$MERGED"
-    #cmd = meld "$LOCAL" "$BASE" "$REMOTE" --output "$MERGED"
-	keepBackup = true
+    	#cmd = meld "$LOCAL" "$BASE" "$REMOTE" --output "$MERGED"
+	keepBackup = false
+[commit]
+	# Change to proper directory depending on machine
+	template = /home/grofftech/Dropbox/git/commit_message_template
+[pull]
+	rebase = preserve
 [alias]
 	# Shows a graphical log
 	logone = log --oneline --decorate --all --graph
