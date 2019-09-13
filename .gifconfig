@@ -25,33 +25,40 @@
 	st = status --short --branch
 
 	# =============================
+	# Diff/Merge Aliases
+	# =============================
+
+	# Diff by directories
+	diffdir = difftool --dir-dif
+
+	# =============================
 	# Staging Aliases
 	# =============================
 
-	# Stage
+	# Stage File(s)
 	# If no argument is supplied, stages all changes
 	# If one file argument supplied, stage that change only
 	stagef = "!f() { \
 		clear; \
-		if [[ -z $1 ]]; \
+		if [ -z $1 ]; \
 		then git add .; \
 		else git add $1; \
 		fi; \
 		git st; \
-		if [[ -z $1 ]]; \
+		if [ -z $1 ]; \
 		then echo \"Added all pending changes to staging!\"; \
 		else echo \"Added '$1' to staging!\"; \
 		fi; \
 		}; f"
 
-	# Unstage
+	# Unstage File(s)
 	# If no argument is supplied, unstages all files.
 	# If one file argument supplied, ustages it.
 	unstage = "!f() { \
 		clear; \
 		git reset HEAD ${1-'--'}; \
 		git st; \
-		if [[ -z $1 ]]; \
+		if [ -z $1 ]; \
 		then echo \"Removed all changes from staging. Changes are now pending!\"; \
 		else echo \"Removed '$1' from staging. '$1' is now pending!\"; \
 		fi; \
@@ -65,14 +72,14 @@
 	# If no message argument supplied, opens configured editor for message.
 	# If message argument supplied, performs commit.
 	commita = "!f() { \
-		if [[ -z $1 ]]; \
+		if [ -z $1 ]; \
 		then git commit; \
 		else git commit -m \"$1\"; \
 		fi; \
 		clear; \
-		git st; \
 		git loglast; \
 		echo \"All changes committed!\"; \
+		git st; \
 		}; f"
 
 	# Uncommit
@@ -83,9 +90,96 @@
 		echo \"Reverted the last commit. Changes are now pending!\"; \
 		}; f"
 
+	# Reword
+	# Open the editor and change the last commit
+	# Any pending changes in staging will be stashed and then re-applied after change
+	reword = "!f() { \
+		git stash; \
+		git commit --amend; \
+		git stash pop; \
+		clear; \
+		git loglast; \
+		echo \"Updated the last commit message!\"; \
+		}; f"
+
+	# Add To
+	# Adds all staged changes to last commit, will not change the commit message
+	addto = "!f() { \
+		git commit -a --amend --no-edit; \
+		clear; \
+		git loglast; \
+		echo \"Added all staged changes to the last commit!\"; \
+		}; f"
+
+	# Rollback
+	# Undo any pending, staged or untracked changes. WARNING this is destructive, you will lose all your changes!
+	rollback = "!f() { \
+		git unstage; \
+		git checkout -- .; \
+		git clean -fd; \
+		clear; \
+		git st; \
+		echo \"Rolled back to the last commit!\"; \
+		}; f"
+
 	# =============================
 	# Branch Aliases
 	# =============================
+
+	# New Branch
+	# Creates a new branch and checks it out
+	newbranch = checkout -b
+
+	# Delete Branch
+	# Deletes the local and remote branch when branch name is supplied
+	deletebranch = "!f() { \
+		name=$1; \
+		if [ -z $name ]; \
+		then echo \"No branch name, please provide the branch name\"; exit -1; \
+		fi; \
+		clear; \
+		git branch -D $name; \
+		echo \"Deleted the local ${name} branch!\"; \
+		git branch; \
+		git ls-remote --exit-code --heads origin $name; \
+		remoteexists=$?; \
+		if [ $remoteexists == 0 ]; \
+		then git push origin --delete $name; \
+		fi; \
+		}; f"
+
+	# Rename branch
+	# Renames the current branch
+	renamebranch = "!f() { \
+		new_name=$1; \
+		if [ -z $new_name ]; \
+		then echo \"No branch name, please provide the new branch name\"; exit -1; \
+		fi; \
+		clear; \
+		git branch -m $new_name; \
+		echo \"Renamed the current branch to ${new_name}\"; \
+		git branch; \
+		}; f"
+
+	# Push Remote
+	# Pushes the current branch you're on to the remote repository
+	pushremote = "!f() { \
+		clear; \
+		BRANCH="$(git rev-parse --abbrev-ref HEAD)"; \
+		echo \"Pushing $BRANCH branch to remote...\"; \
+		git push origin $BRANCH; \
+		}; f"
+
+	# Testing
+	# Used for testing functions in git aliases
+	testing = "!f() { \
+		name=$1; \
+		git ls-remote --exit-code --heads origin $name; \
+		exists=$?; \
+		if [ $exists == 0 ]; \
+		then echo \"Remote branch exists!\"; \
+		fi; \
+		}; f"
 
 	# =============================
 	# Submodule aliases
@@ -97,16 +191,13 @@
 	# Diff for main project and submodules using configured difftool
 	sdifftool = !git difftool && git submodule foreach 'git difftool'
 
-	# Diff for main project and submodules using configured
-	# difftool with directory comparison
+	# Diff for main project and submodules using configured difftool with directory comparison
 	sdifftooldir = !git difftool --dir-dif && git submodule foreach 'git difftool --dir-dif'
 
-	# Push changes, check if submodules have
-	# been pushed. If they haven't, this will abort
+	# Push changes, check if submodules have been pushed. If they haven't, this will abort
 	spushchk = push --recurse-submodules=check
 
-	# Push changes, checking if submodules have
-	# been pushed. If they haven't, this will push them
+	# Push changes, checking if submodules have been pushed. If they haven't, this will push them
 	spush = push --recurse-submodules=on-demand
 
 	# Update the submodules using merge
