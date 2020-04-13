@@ -1,0 +1,5 @@
+# Normalize line endings
+* text=auto
+
+# Force bash scripts to use line feed so it works no matter the OS
+*.sh text eol=lf
