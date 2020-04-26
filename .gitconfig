@@ -55,6 +55,23 @@
 		else echo \"Added '$1' to staging!\"; \
 		fi; \
 		}; f"
+		
+	# Stage and diff files
+	# Stage all modified files and run a diff for all directories
+	stagediff = "!f() { \
+		clear; \
+		if [ -z $1 ]; \
+		then git add .; \
+		else git add $1; \
+		fi; \
+		git st; \
+		if [ -z $1 ]; \
+		then echo \"Added all pending changes to staging!\"; \
+		else echo \"Added '$1' to staging!\"; \
+		fi; \
+		echo \"Comparing staged file(s)...\"; \
+		git diffdir --cached; \
+		}; f"
 
 	# Unstage File(s)
 	# If no argument is supplied, unstages all files.
