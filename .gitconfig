@@ -204,6 +204,15 @@
 		}; f"
 
 	# =============================
+	# Combination aliases
+	# =============================
+
+	# Stage all files and diff them
+	stagediff = "!f() { \
+		git stagef && git diffdir --cached; \
+	}; f"
+
+	# =============================
 	# Submodule aliases
 	# =============================
 
