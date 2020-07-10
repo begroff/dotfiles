@@ -2,7 +2,7 @@
 # Updating
 # =============================
 alias update="sudo apt-get update && sudo apt-get upgrade -y"
-alias updatekeptback="sudo apt-get --with-new-pkgs upgrade -y"
+alias updatekeptback="sudo apt-get --with-new-pkgs upgrade"
 alias autoremove="sudo apt autoremove"
 
 # =============================
