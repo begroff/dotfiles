@@ -12,7 +12,7 @@
 [mergetool]
 	prompt = false
 	cmd = meld "$LOCAL" "$MERGED" "$REMOTE" --output "$MERGED"
-    	#cmd = meld "$LOCAL" "$BASE" "$REMOTE" --output "$MERGED"
+    #cmd = meld "$LOCAL" "$BASE" "$REMOTE" --output "$MERGED"
 	keepBackup = false
 [commit]
 	# Change to proper directory depending on machine
@@ -55,7 +55,7 @@
 		else echo \"Added '$1' to staging!\"; \
 		fi; \
 		}; f"
-		
+
 	# Stage and diff files
 	# Stage all modified files and run a diff for all directories
 	stagediff = "!f() { \
@@ -165,7 +165,7 @@
 		git branch; \
 		git ls-remote --exit-code --heads origin $name; \
 		remoteexists=$?; \
-		if [ $remoteexists == 0 ]; \
+		if [ $remoteexists = 0 ]; \
 		then git push origin --delete $name; \
 		fi; \
 		}; f"
@@ -192,18 +192,75 @@
 		git push origin $BRANCH; \
 		}; f"
 
+    # =============================
+	# Tag aliases
+	# =============================
+
+    # Add Tag
+	# Adds an annotated tag. If no argument for message is provided it
+    # will open configured editor, otherwise it adds the tag with message provided.
+    # Message is argument #2 and needs to be double quoted (e.g. ""Tag Message"")
+	addtag = "!f() { \
+		tag=$1; \
+    message=$2; \
+    if [ -z $tag ]; \
+    then echo \"No tag name, please provide the tag name\"; exit 1; \
+    fi; \
+    if [ ! -z $tag ] && [ -z $message ]; \
+    then git tag -a $tag && echo \"Added tag ${tag}! \"; \
+    fi; \
+    if [ ! -z $tag ] && [ ! -z $message ]; \
+    then git tag -a $tag -m $message && echo \"Added tag ${tag} with message ${message}!\"; \
+    fi; \
+		}; f"
+
+  # Delete Tag
+  deletetag = "!f() { \
+		tag=$1; \
+    if [ -z $tag ]; \
+    then echo \"No tag name, please provide the tag name\"; exit 1; \
+    fi; \
+    git tag -d $tag; \
+		}; f"
+
+  # Push Tag
+  # Pushes a tag to a remote repository using the remote name (e.g. origin)
+  # and the tag name
+  pushtag = "!f() { \
+    remote=$1; \
+    tag=$2; \
+    if [ -z $remote ]; \
+    then echo \"No remote name, please provide the remote name\"; exit 1; \
+    fi; \
+    if [ ! -z $remote ] && [ -z $tag ]; \
+    then echo \"No tag name, please provide the tag name\"; exit 1; \
+    fi; \
+    git push $remote $tag; \
+    echo \"Pushed ${tag} to ${remote}!\"; \
+  }; f"
+
+  # Delete Tag Remote
+  # Requires the remote name (e.g. origin) and the tag name
+  deletetagremote = "!f() { \
+    remote=$1; \
+    tag=$2; \
+    if [ -z $remote ]; \
+    then echo \"No remote name, please provide the remote name\"; exit 1; \
+    fi; \
+    if [ ! -z $remote ] && [ -z $tag ]; \
+    then echo \"No tag name, please provide the tag name\"; exit 1; \
+    fi; \
+    git push $remote --delete $tag; \
+    echo \"Deleted ${tag} from ${remote}!\"; \
+  }; f"
+
 	# Testing
 	# Used for testing functions in git aliases
 	testing = "!f() { \
-		name=$1; \
-		git ls-remote --exit-code --heads origin $name; \
-		exists=$?; \
-		if [ $exists == 0 ]; \
-		then echo \"Remote branch exists!\"; \
-		fi; \
+    echo \"Testing\"; \
 		}; f"
 
-	# =============================
+    # =============================
 	# Combination aliases
 	# =============================
 
