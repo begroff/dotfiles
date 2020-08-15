@@ -34,7 +34,7 @@
     # =============================
 
     # Diff by directories
-    diffdir = difftool --dir-dif
+    diffdir = difftool --dir-diff
 
     # =============================
     # Staging Aliases
