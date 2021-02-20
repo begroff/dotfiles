@@ -253,6 +253,15 @@
         git push $remote --delete $tag; \
         echo \"Deleted ${tag} from ${remote}!\"; \
     }; f"
+    
+    # =============================
+	# Remote Aliases
+	# =============================
+	fetchremote = "!f() { \
+		remote=$1; \
+		branch=$2; \
+		git fetch $remote $branch && git branch -a -vv; \
+    }; f"
 
     # Testing
     # Used for testing functions in git aliases
