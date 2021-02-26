@@ -255,16 +255,21 @@
     }; f"
     
     # =============================
-	# Remote Aliases
-	# =============================
-	fetchremote = "!f() { \
-		remote=$1; \
-		branch=$2; \
-		git fetch $remote $branch && git branch -a -vv; \
+    # Remote Aliases
+    # =============================
+    
+    # Fetches latest remote branch and shows the commits
+    fetchremote = "!f() { \
+    	remote=$1; \
+	branch=$2; \
+	git fetch $remote $branch && git branch -a -vv; \
     }; f"
 
+    # =============================
     # Testing
-    # Used for testing functions in git aliases
+    # =============================
+    
+    # Used for testing new aliases
     testing = "!f() { \
         echo \"Testing\"; \
     }; f"
