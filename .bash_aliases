@@ -43,3 +43,4 @@ alias os="lsb_release -a"
 # =============================
 alias home="cd ~"
 alias back="cd - > /dev/null"
+alias lf="ls -lah"
