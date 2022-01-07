@@ -35,6 +35,9 @@
 
     # Diff by directories
     diffdir = difftool --dir-diff
+    
+    # Diff by directories including new files
+    diffdirc = difftool --dir-dif --cached
 
     # =============================
     # Staging Aliases
