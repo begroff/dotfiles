@@ -18,293 +18,454 @@
     # Change to proper directory depending on machine
     template = /home/grofftech/Dropbox/git/commit_message_template
 [alias]
-    # Shows a graphical log
-    logone = log --oneline --decorate --all --graph
+	# =============================
+	# Log Aliases
+	# =============================
 
-    # Show the log entry for the last commit with a summary
-    loglast = show --summary
+	# Shows a graphical log
+	logone = log --oneline --decorate --all --graph
 
-    # Display status with branch (shows changes as list)
-    st = status --short --branch
+	# Show the log entry for the last commit with a summary
+	loglast = show --summary
 
-    # =============================
-    # Diff/Merge Aliases
-    # =============================
+	# Show the history of a branch with cherry picks
+	logbranchc = log --cherry --oneline --graph --decorate
 
-    # Diff by directories
-    diffdir = difftool --dir-diff
-    
-    # Diff by directories including new files
-    diffdirc = difftool --dir-diff --cached
+	# Show the history of a branch
+	logbranch = log --oneline --graph --decorate
 
-    # =============================
-    # Staging Aliases
-    # =============================
+	logbranchb = "!f() { \
+		BRANCH="$(git rev-parse --abbrev-ref HEAD)"; \
+		git logbranch $BRANCH; \
+	}; f"
 
-    # Stage File(s)
-    # If no argument is supplied, stages all changes
-    # If one file argument supplied, stage that change only
-    stagef = "!f() { \
-        clear; \
-        if [ -z $1 ]; \
-        then git add .; \
-        else git add $1; \
+	# Display status with branch (shows changes as list)
+	st = status --short --branch
+
+	# =============================
+	# Diff/Merge Aliases
+	# =============================
+
+	# Diff by directories
+	diffdir = difftool --dir-dif
+
+	# Diff by directories cached
+	diffdirc = difftool --dir-dif --cached
+
+	# =============================
+	# Staging Aliases
+	# =============================
+
+	# Stage File(s)
+	# If no argument is supplied, stages all changes
+	# If one file argument supplied, stage that change only
+	stagef = "!f() { \
+    clear; \
+    if [ -z $1 ]; \
+    then git add .; \
+    else git add $1; \
+    fi; \
+    git st; \
+    if [ -z $1 ]; \
+    then echo \"Added all pending changes to staging!\"; \
+    else echo \"Added '$1' to staging!\"; \
+    fi; \
+  }; f"
+
+  # Stage and diff files
+  # Stage all modified files and run a diff for all directories
+  stagediff = "!f() { \
+    clear; \
+    if [ -z $1 ]; \
+    then git add .; \
+    else git add $1; \
+    fi; \
+    git st; \
+    if [ -z $1 ]; \
+    then echo \"Added all pending changes to staging!\"; \
+    else echo \"Added '$1' to staging!\"; \
+    fi; \
+    echo \"Comparing staged file(s)...\"; \
+    git diffdir --cached; \
+	}; f"
+
+	# Unstage File(s)
+	# If no argument is supplied, unstages all files.
+	# If one file argument supplied, ustages it.
+	unstage = "!f() { \
+		clear; \
+		git reset HEAD ${1-'--'}; \
+		git st; \
+		if [ -z $1 ]; \
+		then echo \"Removed all changes from staging. Changes are now pending!\"; \
+		else echo \"Removed '$1' from staging. '$1' is now pending!\"; \
+		fi; \
+	}; f"
+
+	# =============================
+	# Commit Aliases
+	# =============================
+
+	# Commit All
+	# If no message argument supplied, opens configured editor for message.
+	# If message argument supplied, performs commit.
+	commita = "!f() { \
+		if [ -z $1 ]; \
+		then git commit; \
+		else git commit -m \"$1\"; \
+		fi; \
+		clear; \
+		git loglast; \
+		echo \"All changes committed!\"; \
+		git st; \
+	}; f"
+
+	# Uncommit
+	uncommit = "!f() { \
+		git reset HEAD^ -q; \
+		clear; \
+		git st; \
+		echo \"Reverted the last commit. Changes are now pending!\"; \
+	}; f"
+
+	# Reword
+	# Open the editor and change the last commit
+	# Any pending changes in staging will be stashed and then re-applied after change
+	reword = "!f() { \
+		git stash; \
+		git commit --amend; \
+		git stash pop; \
+		clear; \
+		git loglast; \
+		echo \"Updated the last commit message!\"; \
+	}; f"
+
+	# Add To
+	# Adds all staged changes to last commit, will not change the commit message
+	addto = "!f() { \
+		git commit -a --amend --no-edit; \
+		clear; \
+		git loglast; \
+		echo \"Added all staged changes to the last commit!\"; \
+	}; f"
+
+	# Rollback
+	# Undo any pending, staged or untracked changes. WARNING this is destructive, you will lose all your changes!
+	rollback = "!f() { \
+		git unstage; \
+		git checkout -- .; \
+		git clean -fd; \
+		clear; \
+		git st; \
+		echo \"Rolled back to the last commit!\"; \
+	}; f"
+
+	# Stage and commit all changes. Opens the commit message
+	# in the configured editing application
+	commitall = !git stagef && git commita
+
+	# =============================
+	# Branch Aliases
+	# =============================
+
+	# New Branch
+	# Creates a new branch and checks it out
+	newbranch = checkout -b
+
+	# Switch Branch
+	# Switches to an existing branch
+	switchbranch = checkout
+
+	# Branch Info
+	# Gets verbose branch information for local/remote branches
+	branchi = branch -a -vv
+
+	# Delete Branch Remote
+	# Deletes the local and remote branch when branch name is supplied
+	deletebranchr = "!f() { \
+		NAME=$1; \
+		if [ -z $NAME ]; \
+		then echo \"No branch name, please provide the branch name\"; exit -1; \
+		fi; \
+		clear; \
+		git branch -D $NAME; \
+		echo \"Deleted the local ${NAME} branch!\"; \
+		git branch; \
+		git ls-remote --exit-code --heads origin $NAME; \
+		REMOTE_EXISTS=$?; \
+		if [ $REMOTE_EXISTS == 0 ]; \
+		then git push origin --delete $NAME; \
+		fi; \
+	}; f"
+
+	# Delete Branch
+	# Deletes the local branch when branch name is supplied.
+	deletebranch = "!f() { \
+		NAME=$1; \
+		if [ -z $NAME ]; \
+		then echo \"No branch name, please provide the branch name\"; exit -1; \
+		fi; \
+		clear; \
+		git branch -D $NAME; \
+		echo \"Deleted the local ${NAME} branch!\"; \
+		git branch; \
+	}; f"
+
+	# Deletes local branches that are not tracked.
+	deletebranches = "!f() { \
+		FORCE=$1; \
+		if [ -z $FORCE ]; \
+		then git branch -vv | grep -v origin | grep -v '\\*' | awk '{print $1}' | xargs -r git branch -d; \
+		else git branch -vv | grep -v origin | grep -v '\\*' | awk '{print $1}' | xargs -r git branch -D; \
+		fi; \
+		git branch -vv; \
+	}; f"
+
+	# Rename branch
+	# Renames the current branch
+	renamebranch = "!f() { \
+		NEW_NAME=$1; \
+		if [ -z $NEW_NAME ]; \
+		then echo \"No branch name, please provide the new branch name\"; exit -1; \
+		fi; \
+		clear; \
+		git branch -m $NEW_NAME; \
+		echo \"Renamed the current branch to ${NEW_NAME}\"; \
+		git branch; \
+	}; f"
+
+	# Push Remote
+	# Pushes the current branch you're on to the remote repository
+	pushremote = "!f() { \
+		clear; \
+		BRANCH="$(git rev-parse --abbrev-ref HEAD)"; \
+		echo \"Pushing $BRANCH branch to remote...\"; \
+		git push origin $BRANCH; \
+	}; f"
+
+	# Gets an updated branch from remote
+	# Gets the specified branch from remote, and then asks if
+	# changes should be merged into the local branch.
+	getbranch = "!f() { \
+		BRANCH=$1; \
+		if [ -z $BRANCH ]; \
+		then echo \"No branch name, please provide the new branch name\"; exit -1; \
+		fi; \
+		git checkout $BRANCH; \
+		git fetchremote origin $BRANCH; \
+		read -N 1 -p \"Do you want to continue merging ${BRANCH} (y/n)?\" ANSWER; \
+		if [ \"${ANSWER}\" == \"y\" ]; \
+		then printf \"\n\" && git merge origin/$BRANCH $BRANCH; \
+		fi; \
+	}; f"
+
+	# Gets an updated branch from remote
+	# Gets the specified branch from remote, and then asks if
+	# changes should be merged into the local branch.
+	getbranchb = "!f() { \
+		BRANCH="$(git rev-parse --abbrev-ref HEAD)"; \
+		git checkout $BRANCH; \
+		git fetchremote origin $BRANCH; \
+		read -N 1 -p \"Do you want to continue merging ${BRANCH} (y/n)?\" ANSWER; \
+		if [ \"${ANSWER}\" == \"y\" ]; \
+		then printf \"\n\" && git merge origin/$BRANCH $BRANCH; \
+		fi; \
+	}; f"
+
+	# Removes a branch from being tracked on remote
+	stoptracking = "!f() { \
+		BRANCH=$1; \
+		if [ -z $BRANCH ]; \
+		then echo \"No branch name, please provide the new branch name\"; exit -1; \
+		fi; \
+		git branch --unset-upstream $BRANCH; \
+	}; f"
+
+	# Tracks a branch on remote
+	trackbranch = "!f() { \
+		BRANCH=$1; \
+		if [ -z $BRANCH ]; \
+		then echo \"No branch name, please provide the new branch name\"; exit -1; \
+		fi; \
+		git checkout $BRANCH; \
+		git branch -u origin/$BRANCH; \
+	}; f"
+
+	# Shows where HEAD is in the local repository
+	showhead = "!f() { \
+		git logone | grep "HEAD " --color=always; \
+	}; f"
+
+	# Shows were HEAD is for the remote in the local repository
+	showoriginhead = "!f() { \
+		git logone | grep "origin/HEAD" --color=always; \
+	}; f"
+
+  # =============================
+	# Merge aliases
+	# =============================
+
+	# Deletes any .orig files that do not get
+	# deleted as part of resolving merge conflicts
+	mergecleanup = "!f() { \
+		find . -name '*.orig' -delete; \
+	}; f"
+
+	# =============================
+	# Stash Alias
+	# =============================
+
+	# List the current stashes.
+	liststash = stash list
+
+	# Applies a stash by index
+	applystash = "!f() { \
+		INDEX=$1; \
+		if [ -z $INDEX ]; \
+        then echo \"No index, please provide the stash index\"; exit 1; \
         fi; \
-        git st; \
-        if [ -z $1 ]; \
-        then echo \"Added all pending changes to staging!\"; \
-        else echo \"Added '$1' to staging!\"; \
-        fi; \
-        }; f"
+		git stash apply stash@{$INDEX}; \
+		git st; \
+	}; f"
 
-    # Stage and diff files
-    # Stage all modified files and run a diff for all directories
-    stagediff = "!f() { \
-        clear; \
-        if [ -z $1 ]; \
-        then git add .; \
-        else git add $1; \
-        fi; \
-        git st; \
-        if [ -z $1 ]; \
-        then echo \"Added all pending changes to staging!\"; \
-        else echo \"Added '$1' to staging!\"; \
-        fi; \
-        echo \"Comparing staged file(s)...\"; \
-        git diffdir --cached; \
-        }; f"
+	# Applies the latest stash
+	applystashl = "!f() { \
+		git stash pop; \
+		git st; \
+	}; f"
 
-    # Unstage File(s)
-    # If no argument is supplied, unstages all files.
-    # If one file argument supplied, ustages it.
-    unstage = "!f() { \
-        clear; \
-        git reset HEAD ${1-'--'}; \
-        git st; \
-        if [ -z $1 ]; \
-        then echo \"Removed all changes from staging. Changes are now pending!\"; \
-        else echo \"Removed '$1' from staging. '$1' is now pending!\"; \
-        fi; \
-        }; f"
+	# Stash all changes including untracked files
+	stashall = stash --include-untracked
 
-    # =============================
-    # Commit Aliases
-    # =============================
+	# Only stash tracked files
+	stashtracked = stash
 
-    # Commit All
-    # If no message argument supplied, opens configured editor for message.
-    # If message argument supplied, performs commit.
-    commita = "!f() { \
-        if [ -z $1 ]; \
-        then git commit; \
-        else git commit -m \"$1\"; \
-        fi; \
-        clear; \
-        git loglast; \
-        echo \"All changes committed!\"; \
-        git st; \
-        }; f"
+	# =============================
+  # Tag aliases
+  # =============================
 
-    # Uncommit
-    uncommit = "!f() { \
-        git reset HEAD^ -q; \
-        clear; \
-        git st; \
-        echo \"Reverted the last commit. Changes are now pending!\"; \
-        }; f"
+  # Add Tag
+  # Adds an annotated tag. If no argument for message is provided it
+  # will open configured editor, otherwise it adds the tag with message provided.
+  # Message is argument #2 and needs to be double quoted (e.g. ""Tag Message"")
+  addtag = "!f() { \
+    tag=$1; \
+    message=$2; \
+    if [ -z $tag ]; \
+    then echo \"No tag name, please provide the tag name\"; exit 1; \
+    fi; \
+    if [ ! -z $tag ] && [ -z $message ]; \
+    then git tag -a $tag && echo \"Added tag ${tag}! \"; \
+    fi; \
+    if [ ! -z $tag ] && [ ! -z $message ]; \
+    then git tag -a $tag -m $message && echo \"Added tag ${tag} with message ${message}!\"; \
+    fi; \
+  }; f"
 
-    # Reword
-    # Open the editor and change the last commit
-    # Any pending changes in staging will be stashed and then re-applied after change
-    reword = "!f() { \
-        git stash; \
-        git commit --amend; \
-        git stash pop; \
-        clear; \
-        git loglast; \
-        echo \"Updated the last commit message!\"; \
-        }; f"
+  # Delete Tag
+  deletetag = "!f() { \
+    TAG=$1; \
+    if [ -z $TAG ]; \
+    then echo \"No tag name, please provide the tag name\"; exit 1; \
+    fi; \
+    git tag -d $TAG; \
+  }; f"
 
-    # Add To
-    # Adds all staged changes to last commit, will not change the commit message
-    addto = "!f() { \
-        git commit -a --amend --no-edit; \
-        clear; \
-        git loglast; \
-        echo \"Added all staged changes to the last commit!\"; \
-        }; f"
+  # Push Tag
+  # Pushes a tag to a remote repository using the remote name (e.g. origin)
+  # and the tag name
+  pushtag = "!f() { \
+    REMOTE=$1; \
+    TAG=$2; \
+    if [ -z $REMOTE ]; \
+    then echo \"No remote name, please provide the remote name\"; exit 1; \
+    fi; \
+    if [ ! -z $REMOTE ] && [ -z $TAG ]; \
+    then echo \"No tag name, please provide the tag name\"; exit 1; \
+    fi; \
+    git push $REMOTE $TAG; \
+    echo \"Pushed ${TAG} to ${REMOTE}!\"; \
+  }; f"
 
-    # Rollback
-    # Undo any pending, staged or untracked changes. WARNING this is destructive, you will lose all your changes!
-    rollback = "!f() { \
-        git unstage; \
-        git checkout -- .; \
-        git clean -fd; \
-        clear; \
-        git st; \
-        echo \"Rolled back to the last commit!\"; \
-        }; f"
+  # Delete Tag Remote
+  # Requires the remote name (e.g. origin) and the tag name
+  deletetagremote = "!f() { \
+    REMOTE=$1; \
+    TAG=$2; \
+    if [ -z $REMOTE ]; \
+    then echo \"No remote name, please provide the remote name\"; exit 1; \
+    fi; \
+    if [ ! -z $REMOTE ] && [ -z $TAG ]; \
+    then echo \"No tag name, please provide the tag name\"; exit 1; \
+    fi; \
+    git push $REMOTE --delete $TAG; \
+    echo \"Deleted ${TAG} from ${REMOTE}!\"; \
+  }; f"
 
-    # =============================
-    # Branch Aliases
-    # =============================
+  # =============================
+  # Remote Aliases
+  # =============================
 
-    # New Branch
-    # Creates a new branch and checks it out
-    newbranch = checkout -b
+  # Fetches latest remote branch and shows the commits
+  fetchremote = "!f() { \
+  	remote=$1; \
+		branch=$2; \
+		git fetch $remote $branch && git branch -a -vv; \
+  }; f"
 
-    # Delete Branch
-    # Deletes the local and remote branch when branch name is supplied
-    deletebranch = "!f() { \
-        name=$1; \
-        if [ -z $name ]; \
-        then echo \"No branch name, please provide the branch name\"; exit -1; \
-        fi; \
-        clear; \
-        git branch -D $name; \
-        echo \"Deleted the local ${name} branch!\"; \
-        git branch; \
-        git ls-remote --exit-code --heads origin $name; \
-        remoteexists=$?; \
-        if [ $remoteexists = 0 ]; \
-        then git push origin --delete $name; \
-        fi; \
-        }; f"
+	# =============================
+	# Config Aliases
+	# =============================
 
-    # Rename branch
-    # Renames the current branch
-    renamebranch = "!f() { \
-        new_name=$1; \
-        if [ -z $new_name ]; \
-        then echo \"No branch name, please provide the new branch name\"; exit -1; \
-        fi; \
-        clear; \
-        git branch -m $new_name; \
-        echo \"Renamed the current branch to ${new_name}\"; \
-        git branch; \
-        }; f"
+	# List the global aliases in alphabetical order
+	aliaslist = !git config --list | grep ^alias\\. | cut -d '=' -f 1 | sort
 
-    # Push Remote
-    # Pushes the current branch you're on to the remote repository
-    pushremote = "!f() { \
-        clear; \
-        BRANCH="$(git rev-parse --abbrev-ref HEAD)"; \
-        echo \"Pushing $BRANCH branch to remote...\"; \
-        git push origin $BRANCH; \
-        }; f"
+	# Open the global config file for editing
+	globalconfig = config --global --edit
 
-    # =============================
-    # Tag aliases
-    # =============================
+	# =============================
+  # Combination aliases
+  # =============================
 
-    # Add Tag
-    # Adds an annotated tag. If no argument for message is provided it
-    # will open configured editor, otherwise it adds the tag with message provided.
-    # Message is argument #2 and needs to be double quoted (e.g. ""Tag Message"")
-    addtag = "!f() { \
-        tag=$1; \
-        message=$2; \
-        if [ -z $tag ]; \
-        then echo \"No tag name, please provide the tag name\"; exit 1; \
-        fi; \
-        if [ ! -z $tag ] && [ -z $message ]; \
-        then git tag -a $tag && echo \"Added tag ${tag}! \"; \
-        fi; \
-        if [ ! -z $tag ] && [ ! -z $message ]; \
-        then git tag -a $tag -m $message && echo \"Added tag ${tag} with message ${message}!\"; \
-        fi; \
-    }; f"
+  # Stage all files and diff them
+  stagediff = "!f() { \
+      git stagef && git diffdir --cached; \
+  }; f"
 
-    # Delete Tag
-    deletetag = "!f() { \
-        tag=$1; \
-        if [ -z $tag ]; \
-        then echo \"No tag name, please provide the tag name\"; exit 1; \
-        fi; \
-        git tag -d $tag; \
-    }; f"
+	# =============================
+	# Submodule aliases
+	# =============================
 
-    # Push Tag
-    # Pushes a tag to a remote repository using the remote name (e.g. origin)
-    # and the tag name
-    pushtag = "!f() { \
-        remote=$1; \
-        tag=$2; \
-        if [ -z $remote ]; \
-        then echo \"No remote name, please provide the remote name\"; exit 1; \
-        fi; \
-        if [ ! -z $remote ] && [ -z $tag ]; \
-        then echo \"No tag name, please provide the tag name\"; exit 1; \
-        fi; \
-        git push $remote $tag; \
-        echo \"Pushed ${tag} to ${remote}!\"; \
-    }; f"
+	# Diff for main project and submodules
+	sdiff = !git diff && git submodule foreach 'git diff'
 
-    # Delete Tag Remote
-    # Requires the remote name (e.g. origin) and the tag name
-    deletetagremote = "!f() { \
-        remote=$1; \
-        tag=$2; \
-        if [ -z $remote ]; \
-        then echo \"No remote name, please provide the remote name\"; exit 1; \
-        fi; \
-        if [ ! -z $remote ] && [ -z $tag ]; \
-        then echo \"No tag name, please provide the tag name\"; exit 1; \
-        fi; \
-        git push $remote --delete $tag; \
-        echo \"Deleted ${tag} from ${remote}!\"; \
-    }; f"
-    
-    # =============================
-    # Remote Aliases
-    # =============================
-    
-    # Fetches latest remote branch and shows the commits
-    fetchremote = "!f() { \
-    	remote=$1; \
-	branch=$2; \
-	git fetch $remote $branch && git branch -a -vv; \
-    }; f"
+	# Diff for main project and submodules using configured difftool
+	sdifftool = !git difftool && git submodule foreach 'git difftool'
 
-    # =============================
-    # Testing
-    # =============================
-    
-    # Used for testing new aliases
-    testing = "!f() { \
-        echo \"Testing\"; \
-    }; f"
+	# Diff for main project and submodules using configured difftool with directory comparison
+	sdifftooldir = !git difftool --dir-dif && git submodule foreach 'git difftool --dir-dif'
 
-    # =============================
-    # Combination aliases
-    # =============================
+	# Push changes, check if submodules have been pushed. If they haven't, this will abort
+	spushchk = push --recurse-submodules=check
 
-    # Stage all files and diff them
-    stagediff = "!f() { \
-        git stagef && git diffdir --cached; \
-    }; f"
+	# Push changes, checking if submodules have been pushed. If they haven't, this will push them
+	spush = push --recurse-submodules=on-demand
 
-    # =============================
-    # Submodule aliases
-    # =============================
+	# Update the submodules using merge
+	supdatem = submodule update --remote --merge
 
-    # Diff for main project and submodules
-    sdiff = !git diff && git submodule foreach 'git diff'
+	# Update the submodules using rebase
+	supdater = submodule update --remote --rebase
 
-    # Diff for main project and submodules using configured difftool
-    sdifftool = !git difftool && git submodule foreach 'git difftool'
+  # =============================
+	# Testing
+	# =============================
 
-    # Diff for main project and submodules using configured difftool with directory comparison
-    sdifftooldir = !git difftool --dir-dif && git submodule foreach 'git difftool --dir-dif'
-
-    # Push changes, check if submodules have been pushed. If they haven't, this will abort
-    spushchk = push --recurse-submodules=check
-
-    # Push changes, checking if submodules have been pushed. If they haven't, this will push them
-    spush = push --recurse-submodules=on-demand
-
-    # Update the submodules using merge
-    supdatem = submodule update --remote --merge
-
-    # Update the submodules using rebase
-    supdater = submodule update --remote --rebase
+	# Used for testing functions in git aliases
+	testing = "!f() { \
+		BRANCH=$1; \
+		if [ -z $BRANCH ]; \
+		then echo \"No branch name, please provide the new branch name\"; exit -1; \
+		fi; \
+		git branch --unset-upstream $BRANCH; \
+	}; f"
