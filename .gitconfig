@@ -22,20 +22,24 @@
 	# Log Aliases
 	# =============================
 
-	# Shows a graphical log
+	# Shows a graphical log of all branches
 	logone = log --oneline --decorate --all --graph
 
-	# Show the log entry for the last commit with a summary
+	# Show the log entry for the last commit on the current branch
+    # with a summary
 	loglast = show --summary
 
-	# Show the history of a branch with cherry picks
+	# Show the history of the current branch with cherry picks
 	logbranchc = log --cherry --oneline --graph --decorate
 
-	# Show the history of a branch
+	# Show the history of the current branch
 	logbranch = log --oneline --graph --decorate
 
+    # Show the history of a specific branch
 	logbranchb = "!f() { \
-		BRANCH="$(git rev-parse --abbrev-ref HEAD)"; \
+        BRANCH=$1; \
+		if [ -z $BRANCH ]; \
+		then echo \"No branch name, please provide the new branch name\"; exit -1; \
 		git logbranch $BRANCH; \
 	}; f"
 
@@ -47,10 +51,10 @@
 	# =============================
 
 	# Diff by directories
-	diffdir = difftool --dir-dif
+	diffdir = difftool --dir-diff
 
-	# Diff by directories cached
-	diffdirc = difftool --dir-dif --cached
+    # Diff by directories including new files
+    diffdirc = difftool --dir-diff --cached
 
 	# =============================
 	# Staging Aliases
@@ -59,35 +63,35 @@
 	# Stage File(s)
 	# If no argument is supplied, stages all changes
 	# If one file argument supplied, stage that change only
-	stagef = "!f() { \
-    clear; \
-    if [ -z $1 ]; \
-    then git add .; \
-    else git add $1; \
-    fi; \
-    git st; \
-    if [ -z $1 ]; \
-    then echo \"Added all pending changes to staging!\"; \
-    else echo \"Added '$1' to staging!\"; \
-    fi; \
-  }; f"
+    stagef = "!f() { \
+        clear; \
+        if [ -z $1 ]; \
+        then git add .; \
+        else git add $1; \
+        fi; \
+        git st; \
+        if [ -z $1 ]; \
+        then echo \"Added all pending changes to staging!\"; \
+        else echo \"Added '$1' to staging!\"; \
+        fi; \
+    }; f"
 
-  # Stage and diff files
-  # Stage all modified files and run a diff for all directories
-  stagediff = "!f() { \
-    clear; \
-    if [ -z $1 ]; \
-    then git add .; \
-    else git add $1; \
-    fi; \
-    git st; \
-    if [ -z $1 ]; \
-    then echo \"Added all pending changes to staging!\"; \
-    else echo \"Added '$1' to staging!\"; \
-    fi; \
-    echo \"Comparing staged file(s)...\"; \
-    git diffdir --cached; \
-	}; f"
+    # Stage and diff files
+    # Stage all modified files and run a diff for all directories
+    stagediff = "!f() { \
+        clear; \
+        if [ -z $1 ]; \
+        then git add .; \
+        else git add $1; \
+        fi; \
+        git st; \
+        if [ -z $1 ]; \
+        then echo \"Added all pending changes to staging!\"; \
+        else echo \"Added '$1' to staging!\"; \
+        fi; \
+        echo \"Comparing staged file(s)...\"; \
+        git diffdir --cached; \
+        }; f"
 
 	# Unstage File(s)
 	# If no argument is supplied, unstages all files.
@@ -301,7 +305,7 @@
 		git logone | grep "origin/HEAD" --color=always; \
 	}; f"
 
-  # =============================
+    # =============================
 	# Merge aliases
 	# =============================
 
@@ -341,77 +345,78 @@
 	stashtracked = stash
 
 	# =============================
-  # Tag aliases
-  # =============================
+    # Tag aliases
+    # =============================
 
-  # Add Tag
-  # Adds an annotated tag. If no argument for message is provided it
-  # will open configured editor, otherwise it adds the tag with message provided.
-  # Message is argument #2 and needs to be double quoted (e.g. ""Tag Message"")
-  addtag = "!f() { \
-    tag=$1; \
-    message=$2; \
-    if [ -z $tag ]; \
-    then echo \"No tag name, please provide the tag name\"; exit 1; \
-    fi; \
-    if [ ! -z $tag ] && [ -z $message ]; \
-    then git tag -a $tag && echo \"Added tag ${tag}! \"; \
-    fi; \
-    if [ ! -z $tag ] && [ ! -z $message ]; \
-    then git tag -a $tag -m $message && echo \"Added tag ${tag} with message ${message}!\"; \
-    fi; \
-  }; f"
+    # Add Tag
+    # Adds an annotated tag. If no argument for message is provided it
+    # will open configured editor, otherwise it adds the tag with message provided.
+    # Message is argument #2 and needs to be double quoted (e.g. ""Tag Message"")
+    addtag = "!f() { \
+        tag=$1; \
+        message=$2; \
+        if [ -z $tag ]; \
+        then echo \"No tag name, please provide the tag name\"; exit 1; \
+        fi; \
+        if [ ! -z $tag ] && [ -z $message ]; \
+        then git tag -a $tag && echo \"Added tag ${tag}! \"; \
+        fi; \
+        if [ ! -z $tag ] && [ ! -z $message ]; \
+        then git tag -a $tag -m $message && echo \"Added tag ${tag} with message ${message}!\"; \
+        fi; \
+    }; f"
 
-  # Delete Tag
-  deletetag = "!f() { \
-    TAG=$1; \
-    if [ -z $TAG ]; \
-    then echo \"No tag name, please provide the tag name\"; exit 1; \
-    fi; \
-    git tag -d $TAG; \
-  }; f"
+    # Delete Tag
+    deletetag = "!f() { \
+        TAG=$1; \
+        if [ -z $TAG ]; \
+        then echo \"No tag name, please provide the tag name\"; exit 1; \
+        fi; \
+        git tag -d $TAG; \
+    }; f"
 
-  # Push Tag
-  # Pushes a tag to a remote repository using the remote name (e.g. origin)
-  # and the tag name
-  pushtag = "!f() { \
-    REMOTE=$1; \
-    TAG=$2; \
-    if [ -z $REMOTE ]; \
-    then echo \"No remote name, please provide the remote name\"; exit 1; \
-    fi; \
-    if [ ! -z $REMOTE ] && [ -z $TAG ]; \
-    then echo \"No tag name, please provide the tag name\"; exit 1; \
-    fi; \
-    git push $REMOTE $TAG; \
-    echo \"Pushed ${TAG} to ${REMOTE}!\"; \
-  }; f"
+    # Push Tag
+    # Pushes a tag to a remote repository using the remote name (e.g. origin)
+    # and the tag name
+    pushtag = "!f() { \
+        REMOTE=$1; \
+        TAG=$2; \
+        if [ -z $REMOTE ]; \
+        then echo \"No remote name, please provide the remote name\"; exit 1; \
+        fi; \
+        if [ ! -z $REMOTE ] && [ -z $TAG ]; \
+        then echo \"No tag name, please provide the tag name\"; exit 1; \
+        fi; \
+        git push $REMOTE $TAG; \
+        echo \"Pushed ${TAG} to ${REMOTE}!\"; \
+    }; f"
 
-  # Delete Tag Remote
-  # Requires the remote name (e.g. origin) and the tag name
-  deletetagremote = "!f() { \
-    REMOTE=$1; \
-    TAG=$2; \
-    if [ -z $REMOTE ]; \
-    then echo \"No remote name, please provide the remote name\"; exit 1; \
-    fi; \
-    if [ ! -z $REMOTE ] && [ -z $TAG ]; \
-    then echo \"No tag name, please provide the tag name\"; exit 1; \
-    fi; \
-    git push $REMOTE --delete $TAG; \
-    echo \"Deleted ${TAG} from ${REMOTE}!\"; \
-  }; f"
+    # Delete Tag Remote
+    # Requires the remote name (e.g. origin) and the tag name
+    deletetagremote = "!f() { \
+        REMOTE=$1; \
+        TAG=$2; \
+        if [ -z $REMOTE ]; \
+        then echo \"No remote name, please provide the remote name\"; exit 1; \
+        fi; \
+        if [ ! -z $REMOTE ] && [ -z $TAG ]; \
+        then echo \"No tag name, please provide the tag name\"; exit 1; \
+        fi; \
+        git push $REMOTE --delete $TAG; \
+        echo \"Deleted ${TAG} from ${REMOTE}!\"; \
+    }; f"
 
-  # =============================
-  # Remote Aliases
-  # =============================
+    # =============================
+    # Remote Aliases
+    # =============================
 
-  # Fetches latest remote branch and shows the commits
-  fetchremote = "!f() { \
-  	remote=$1; \
-		branch=$2; \
-		git fetch $remote $branch && git branch -a -vv; \
-  }; f"
+    # Fetches latest remote branch and shows the commits
+    fetchremote = "!f() { \
+        remote=$1; \
+            branch=$2; \
+            git remote prune $1; \
+            git fetch $remote $branch && git branch -a -vv; \
+    }; f"
 
 	# =============================
 	# Config Aliases
@@ -423,14 +428,14 @@
 	# Open the global config file for editing
 	globalconfig = config --global --edit
 
-	# =============================
-  # Combination aliases
-  # =============================
+    # =============================
+    # Combination aliases
+    # =============================
 
-  # Stage all files and diff them
-  stagediff = "!f() { \
-      git stagef && git diffdir --cached; \
-  }; f"
+    # Stage all files and diff them
+    stagediff = "!f() { \
+        git stagef && git diffdir --cached; \
+    }; f"
 
 	# =============================
 	# Submodule aliases
@@ -457,7 +462,7 @@
 	# Update the submodules using rebase
 	supdater = submodule update --remote --rebase
 
-  # =============================
+    # =============================
 	# Testing
 	# =============================
 
