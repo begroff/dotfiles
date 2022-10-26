@@ -22,45 +22,53 @@
 	# Log Aliases
 	# =============================
 
-	# Shows a graphical log of all branches
+	# Shows a graphical log for all branches
 	logone = log --oneline --decorate --all --graph
 
-	# Show the log entry for the last commit on the current branch
-    # with a summary
+	# Show the log entry for the last commit with a summary
 	loglast = show --summary
 
-	# Show the history of the current branch with cherry picks
+	# Show the history of the current branch you are on
+    # with cherry picks
 	logbranchc = log --cherry --oneline --graph --decorate
 
-	# Show the history of the current branch
+	# Log Branch Current
+    # Show the history of the current branch you are on
 	logbranch = log --oneline --graph --decorate
 
-    # Show the history of a specific branch
+    # Log Branch
+    # Show the history of the supplied branch
 	logbranchb = "!f() { \
         BRANCH=$1; \
 		if [ -z $BRANCH ]; \
-		then echo \"No branch name, please provide the new branch name\"; exit -1; \
+		then echo \"No branch name, please provide the branch name\"; exit -1; \
+		fi; \
 		git logbranch $BRANCH; \
 	}; f"
 
-	# Display status with branch (shows changes as list)
+    # =============================
+	# Status Aliases
+	# =============================
+
+	# Status
+    # Display status with branch (shows changes as list)
 	st = status --short --branch
 
 	# =============================
-	# Diff/Merge Aliases
+	# Diff Aliases
 	# =============================
 
-	# Diff by directories
+	# Diff Directory
 	diffdir = difftool --dir-diff
 
-    # Diff by directories including new files
-    diffdirc = difftool --dir-diff --cached
+	# Diff Directory Cached
+	diffdirc = difftool --dir-diff --cached
 
 	# =============================
 	# Staging Aliases
 	# =============================
 
-	# Stage File(s)
+	# Stage File
 	# If no argument is supplied, stages all changes
 	# If one file argument supplied, stage that change only
     stagef = "!f() { \
@@ -76,7 +84,7 @@
         fi; \
     }; f"
 
-    # Stage and diff files
+    # Stage Diff
     # Stage all modified files and run a diff for all directories
     stagediff = "!f() { \
         clear; \
@@ -90,10 +98,10 @@
         else echo \"Added '$1' to staging!\"; \
         fi; \
         echo \"Comparing staged file(s)...\"; \
-        git diffdir --cached; \
-        }; f"
+        git diffdirc; \
+    }; f"
 
-	# Unstage File(s)
+	# Unstage
 	# If no argument is supplied, unstages all files.
 	# If one file argument supplied, ustages it.
 	unstage = "!f() { \
@@ -164,7 +172,8 @@
 		echo \"Rolled back to the last commit!\"; \
 	}; f"
 
-	# Stage and commit all changes. Opens the commit message
+	# Commit All
+    # Stage and commit all changes. Opens the commit message
 	# in the configured editing application
 	commitall = !git stagef && git commita
 
@@ -192,14 +201,8 @@
 		then echo \"No branch name, please provide the branch name\"; exit -1; \
 		fi; \
 		clear; \
-		git branch -D $NAME; \
-		echo \"Deleted the local ${NAME} branch!\"; \
-		git branch; \
-		git ls-remote --exit-code --heads origin $NAME; \
-		REMOTE_EXISTS=$?; \
-		if [ $REMOTE_EXISTS == 0 ]; \
-		then git push origin --delete $NAME; \
-		fi; \
+		git deletebranch $NAME; \
+		git push origin --delete $NAME; \
 	}; f"
 
 	# Delete Branch
@@ -215,7 +218,12 @@
 		git branch; \
 	}; f"
 
-	# Deletes local branches that are not tracked.
+	# Delete Branches
+    # Deletes local branches that are not tracked.
+    # The first argument can be anything really (normally pass 'force')
+    #
+    # Be careful! This can delete in-progress work that
+    # has already been committed/pushed.
 	deletebranches = "!f() { \
 		FORCE=$1; \
 		if [ -z $FORCE ]; \
@@ -225,7 +233,7 @@
 		git branch -vv; \
 	}; f"
 
-	# Rename branch
+	# Rename Branch
 	# Renames the current branch
 	renamebranch = "!f() { \
 		NEW_NAME=$1; \
@@ -247,7 +255,7 @@
 		git push origin $BRANCH; \
 	}; f"
 
-	# Gets an updated branch from remote
+	# Get Branch
 	# Gets the specified branch from remote, and then asks if
 	# changes should be merged into the local branch.
 	getbranch = "!f() { \
@@ -263,8 +271,8 @@
 		fi; \
 	}; f"
 
-	# Gets an updated branch from remote
-	# Gets the specified branch from remote, and then asks if
+	# Get Branch Current
+	# Gets the current branch from remote, and then asks if
 	# changes should be merged into the local branch.
 	getbranchb = "!f() { \
 		BRANCH="$(git rev-parse --abbrev-ref HEAD)"; \
@@ -276,7 +284,38 @@
 		fi; \
 	}; f"
 
-	# Removes a branch from being tracked on remote
+    # Get Branch Remote
+    # Gets the specified branch from remote without getting the latest and merging
+    getbranchr = "!f() { \
+        BRANCH=$1; \
+		if [ -z $BRANCH ]; \
+		then echo \"No branch name, please provide the new branch name\"; exit -1; \
+		fi; \
+		git fetch origin $BRANCH; \
+		git checkout $BRANCH; \
+	}; f"
+
+    # Get Branch Remote & Merge
+    # Get the specified branch from remote. Gets the latest changes and asks if you want to merge them in
+    getbranchrm = "!f() { \
+        BRANCH=$1; \
+		if [ -z $BRANCH ]; \
+		then echo \"No branch name, please provide the new branch name\"; exit -1; \
+		fi; \
+		git getbranchr $BRANCH; \
+		git getbranch $BRANCH; \
+	}; f"
+
+    # Get Current Branch Remote & Merge
+    # Gets the current branch you are on from remote. Gets the latest changes and asks if you want to merge them in
+    getbranchrmb = "!f() { \
+        BRANCH="$(git rev-parse --abbrev-ref HEAD)"; \
+		git getbranchr $BRANCH; \
+		git getbranch $BRANCH; \
+	}; f"
+
+	# Stop Tracking Branch
+    # Removes a branch from being tracked on remote
 	stoptracking = "!f() { \
 		BRANCH=$1; \
 		if [ -z $BRANCH ]; \
@@ -285,7 +324,8 @@
 		git branch --unset-upstream $BRANCH; \
 	}; f"
 
-	# Tracks a branch on remote
+	# Track Branch Remote
+    # Tracks a branch on remote
 	trackbranch = "!f() { \
 		BRANCH=$1; \
 		if [ -z $BRANCH ]; \
@@ -295,13 +335,23 @@
 		git branch -u origin/$BRANCH; \
 	}; f"
 
-	# Shows where HEAD is in the local repository
+    # Track Branch Current
+    # Tracks the current branch on remote if it doesn't exist locally
+    trackbranchb = "!f() { \
+		BRANCH="$(git rev-parse --abbrev-ref HEAD)"; \
+		git getbranchb; \
+		git branch -u origin/$BRANCH; \
+	}; f"
+
+	# Show Head
+    # Shows where HEAD is in the local repository
 	showhead = "!f() { \
 		git logone | grep "HEAD " --color=always; \
 	}; f"
 
-	# Shows were HEAD is for the remote in the local repository
-	showoriginhead = "!f() { \
+	# Show Head Remote
+    # Shows were HEAD is for the remote in the local repository
+	showremotehead = "!f() { \
 		git logone | grep "origin/HEAD" --color=always; \
 	}; f"
 
@@ -309,42 +359,88 @@
 	# Merge aliases
 	# =============================
 
-	# Deletes any .orig files that do not get
+	# Merge Cleanup
+    # Deletes any .orig files that do not get
 	# deleted as part of resolving merge conflicts
 	mergecleanup = "!f() { \
-		find . -name '*.orig' -delete; \
+		find . -name '*.orig' -delete -print; \
+	}; f"
+
+    # Merge Branch
+    # Gets the lastest from supplied branch and merges
+    # it into the current branch you are working on.
+    mergebranch = "!f() { \
+        CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"; \
+        BRANCH=$1; \
+		if [ -z $BRANCH ]; \
+		then echo \"No branch name, please provide the new branch name\"; exit -1; \
+		fi; \
+        git getbranch $BRANCH; \
+        git checkout $CURRENT_BRANCH; \
+        git merge $BRANCH; \
 	}; f"
 
 	# =============================
 	# Stash Alias
 	# =============================
 
-	# List the current stashes.
-	liststash = stash list
+	# Stash List
+    # List the current stashes.
+	stashlist = stash list
 
+    # Stash Apply
 	# Applies a stash by index
-	applystash = "!f() { \
+	stashapply = "!f() { \
 		INDEX=$1; \
 		if [ -z $INDEX ]; \
         then echo \"No index, please provide the stash index\"; exit 1; \
         fi; \
 		git stash apply stash@{$INDEX}; \
+        git stashdelete $INDEX; \
 		git st; \
 	}; f"
 
+    # Stash Apply Latest
 	# Applies the latest stash
-	applystashl = "!f() { \
+	stashapplyl = "!f() { \
 		git stash pop; \
 		git st; \
 	}; f"
 
-	# Stash all changes including untracked files
-	stashall = stash --include-untracked
+    # Stash All
+    # Stashes all changes including untracked files
+    # If a message is provided will stash with message. Message must be double # quoted (e.g. git stashall ""Stash message"")
+    stashall = "!f() { \
+		MESSAGE=$1; \
+		if [ -z "$MESSAGE" ]; \
+        then git stash --include-untracked; \
+        else git stash save --include-untracked $MESSAGE; \
+        fi; \
+	}; f"
 
-	# Only stash tracked files
-	stashtracked = stash
+    # Stash Tracked
+    # Stashes all tracked file changes
+    # If a message is provided will stash with message. Message must be double # quoted (e.g. git stashtracked ""Stash message"")
+    stashtracked = "!f() { \
+		MESSAGE=$1; \
+		if [ -z "$MESSAGE" ]; \
+        then git stash; \
+        else git stash save $MESSAGE; \
+        fi; \
+	}; f"
 
-	# =============================
+    # Stash Delete
+    # Delete all stashes
+    stashdelete = "!f() { \
+		INDEX=$1; \
+		if [ -z $INDEX ]; \
+        then echo \"No index, please provide the stash index\"; exit 1; \
+        fi; \
+		git stash drop stash@{$INDEX}; \
+		git stashlist; \
+	}; f"
+
+    # =============================
     # Tag aliases
     # =============================
 
@@ -352,7 +448,7 @@
     # Adds an annotated tag. If no argument for message is provided it
     # will open configured editor, otherwise it adds the tag with message provided.
     # Message is argument #2 and needs to be double quoted (e.g. ""Tag Message"")
-    addtag = "!f() { \
+    tagadd = "!f() { \
         tag=$1; \
         message=$2; \
         if [ -z $tag ]; \
@@ -367,7 +463,7 @@
     }; f"
 
     # Delete Tag
-    deletetag = "!f() { \
+    tagdelete = "!f() { \
         TAG=$1; \
         if [ -z $TAG ]; \
         then echo \"No tag name, please provide the tag name\"; exit 1; \
@@ -378,7 +474,7 @@
     # Push Tag
     # Pushes a tag to a remote repository using the remote name (e.g. origin)
     # and the tag name
-    pushtag = "!f() { \
+    tagpush = "!f() { \
         REMOTE=$1; \
         TAG=$2; \
         if [ -z $REMOTE ]; \
@@ -393,7 +489,7 @@
 
     # Delete Tag Remote
     # Requires the remote name (e.g. origin) and the tag name
-    deletetagremote = "!f() { \
+    tagdeleteremote = "!f() { \
         REMOTE=$1; \
         TAG=$2; \
         if [ -z $REMOTE ]; \
@@ -410,28 +506,69 @@
     # Remote Aliases
     # =============================
 
-    # Fetches latest remote branch and shows the commits
+    # Fetch Remote
+    # Fetches latest remote for supplied branch and shows the commits
     fetchremote = "!f() { \
-        remote=$1; \
-            branch=$2; \
-            git remote prune $1; \
-            git fetch $remote $branch && git branch -a -vv; \
+        REMOTE=$1; \
+        BRANCH=$2; \
+        if [ -z $BRANCH ]; \
+		then echo \"No branch name, please provide the new branch name\"; exit -1; \
+        fi; \
+        git fetch $REMOTE $BRANCH && git branch -a -vv | grep $BRANCH; \
+    }; f"
+
+    # Fetch Remote Branch
+    # Fetches latest remote for the branch you are on and shows the commits
+    fetchremoteb = "!f() { \
+        REMOTE=$1; \
+        BRANCH="$(git rev-parse --abbrev-ref HEAD)"; \
+        if [ -z $REMOTE ]; \
+        then echo \"No remote name, please provide the remote name\"; exit 1; \
+        fi; \
+        git fetch $REMOTE $BRANCH && git branch -a -vv | grep $BRANCH; \
+    }; f"
+
+    # Prune Remote
+    # Deletes local remote branches from a specified remote without
+    # fetching data
+    pruneremote = "!f() { \
+        REMOTE=$1; \
+        if [ -z $REMOTE ]; \
+        then echo \"No remote name, please provide the remote name\"; exit 1; \
+        fi; \
+        git remote prune $REMOTE; \
+        git branchi; \
+    }; f"
+
+    # Prune Remote Fetch
+    # Deletes local remote branches from a specified remote after
+    # fetching data
+    pruneremotef = "!f() { \
+        REMOTE=$1; \
+        if [ -z $REMOTE ]; \
+        then echo \"No remote name, please provide the remote name\"; exit 1; \
+        fi; \
+        git fetch --prune $REMOTE; \
+        git branchi ;\
     }; f"
 
 	# =============================
 	# Config Aliases
 	# =============================
 
-	# List the global aliases in alphabetical order
+	# Alias List
+    # List the global aliases in alphabetical order
 	aliaslist = !git config --list | grep ^alias\\. | cut -d '=' -f 1 | sort
 
-	# Open the global config file for editing
+	# Global Config
+    # Open the global config file for editing
 	globalconfig = config --global --edit
 
     # =============================
     # Combination aliases
     # =============================
 
+    # Stage and Diff
     # Stage all files and diff them
     stagediff = "!f() { \
         git stagef && git diffdir --cached; \
